@@ -8,32 +8,55 @@ namespace DiningHall.Services
 {
     public class DiningHallService : IDiningHallService
     {
-        private static RestClient _client;
-        private Table table = new Table(1, TableState.Free);
+        private static RestClient _client = new();
+        private List<Table> Tables;
         private readonly ILogger<DiningHallService> _logger;
+        private Random _rnd = new();
+        private IDiningHallRequester DiningHallRequester;
 
-        public DiningHallService(IConfiguration Configuration, ILogger<DiningHallService> logger)
+        public DiningHallService(IConfiguration configuration, ILogger<DiningHallService> logger, IDiningHallRequester diningHallRequester)
         {
             _logger = logger;
+            DiningHallRequester = diningHallRequester;
             _client = new RestClient("http://host.docker.internal:8091/");
-            Task.Run(SendOrder);
+            Tables = new List<Table>();
+
+            //create new tables with corresponding ID
+            for (var i = 1; i <= configuration.GetValue<int>("Tables"); i++)
+            {
+                Tables.Add(new Table(i));
+            }
+
+            //change randomly state of the table
+            ChangeTableState();
+
+            Start();
         }
 
-        public async Task SendOrder()
+        private void ChangeTableState()
         {
-            var order = table.GenerateOrder(1);
-
-            var request = new RestRequest("api/order").AddJsonBody(order);
-            var response = await _client.PostAsync(request);
-
-            //_logger.LogInformation(postTask.IsSuccessStatusCode
-            //    ? $"Hall sent order {order.OrderId}"
-            //    : $"Couldn't send order {order.OrderId}");
+            var tableToChange = _rnd.Next(1, Tables.Count + 1);
+            foreach (var table in Tables.Where(t => t.TableId == tableToChange
+                                                    && t.TableState == TableState.Free))
+            {
+                table.TableState = TableState.MakeOrder;
+            }
         }
 
-        public async Task ReceiveReturnOrder(ReturnOrder returnOrder)
+        public void Start()
         {
-            await SendOrder();
+
+
+            foreach (var table in Tables)
+            {
+                if (table.TableState == TableState.MakeOrder)
+                {
+                    DiningHallRequester.SendOrder(table.GenerateOrder(1));
+                    table.TableState = TableState.WaitOrder;
+                }
+            }
+
+            ChangeTableState();
         }
     }
 }

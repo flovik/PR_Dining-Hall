@@ -25,7 +25,7 @@ namespace DiningHall.Controllers
             _logger.Log(LogLevel.Information, 1000, $"Kitchen returned order with ID {returnOrder.OrderId} " +
                                                     $"from table {returnOrder.TableId}");
 
-            await _diningHallService.ReceiveReturnOrder(returnOrder);
+            //await _diningHallService.ReceiveReturnOrder(returnOrder);
 
             return NoContent();
         }
@@ -33,7 +33,7 @@ namespace DiningHall.Controllers
         [HttpGet("get")]
         public async Task<IActionResult> Get()
         {
-            await _diningHallService.SendOrder();
+            //await _diningHallService.SendOrder();
             return Ok("is the request sent?");
         }
     }

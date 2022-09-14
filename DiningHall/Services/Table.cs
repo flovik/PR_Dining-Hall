@@ -4,15 +4,14 @@ namespace DiningHall.Services
 {
     public class Table
     {
-        private Random rnd = new();
+        private readonly Random _rnd = new();
         public int TableId { get; set; }
         private static int _orderId = 1;
-        public TableState TableState { get; set; }
+        public TableState TableState { get; set; } = TableState.Free;
 
-        public Table(int tableId, TableState tableState)
+        public Table(int tableId)
         {
             TableId = tableId;
-            TableState = tableState;
         }
 
         public Order GenerateOrder(int waiterId)
@@ -36,13 +35,13 @@ namespace DiningHall.Services
         public List<int> GenerateFoodList()
         {
             //generate number of foods in order
-            int foods = rnd.Next(1, 6);
+            var foods = _rnd.Next(1, 6);
             var foodList = new List<int>(foods);
 
             //insert one of the foods in food list
             for (var i = 0; i < foods; i++)
             {
-                var foodNr = rnd.Next(1, 14);
+                var foodNr = _rnd.Next(1, 14);
                 foodList.Add(foodNr);
             }
 
@@ -52,7 +51,7 @@ namespace DiningHall.Services
         //TODO: create priority functionality
         public int GeneratePriority()
         {
-            int priority = rnd.Next(1, 6);
+            var priority = _rnd.Next(1, 6);
             return priority;
         }
     }
