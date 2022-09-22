@@ -8,6 +8,7 @@ namespace DiningHall.Services
         public int TableId { get; set; }
         private static int _orderId = 1;
         public TableState TableState { get; set; } = TableState.Free;
+        public Order? CurrentOrder { get; set; }
 
         public Table(int tableId)
         {
@@ -29,6 +30,7 @@ namespace DiningHall.Services
                 MaxWait = maxWait
             };
 
+            CurrentOrder = order;
             return order;
         }
 

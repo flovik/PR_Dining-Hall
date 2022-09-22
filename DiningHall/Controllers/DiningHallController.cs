@@ -11,30 +11,22 @@ namespace DiningHall.Controllers
     public class DiningHallController : ControllerBase
     {
         private readonly ILogger<DiningHallController> _logger;
-        private readonly IDiningHallService _diningHallService;
-        public DiningHallController(ILogger<DiningHallController> logger, IDiningHallService diningHallService)
+        private readonly IDiningHallServiceEvent _diningHallService;
+        public DiningHallController(ILogger<DiningHallController> logger, IDiningHallServiceEvent diningHallService)
         {
             _logger = logger;
             _diningHallService = diningHallService;
         }
 
         [HttpPost("distribution")]
-        public async Task<IActionResult> Distribution([FromBody] ReturnOrder returnOrder)
+        public IActionResult Distribution([FromBody] ReturnOrder returnOrder)
         {
             //endpoint for kitchen server, here comes returnOrder
-            _logger.Log(LogLevel.Information, 1000, $"Kitchen returned order with ID {returnOrder.OrderId} " +
-                                                    $"from table {returnOrder.TableId}");
 
-            //await _diningHallService.ReceiveReturnOrder(returnOrder);
+            //notify waiters when returnOrder arrives
+            _diningHallService.OnReturnOrderProcess(returnOrder);
 
             return NoContent();
-        }
-
-        [HttpGet("get")]
-        public async Task<IActionResult> Get()
-        {
-            //await _diningHallService.SendOrder();
-            return Ok("is the request sent?");
         }
     }
 }

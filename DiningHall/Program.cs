@@ -6,8 +6,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddScoped<IDiningHallService, DiningHallService>();
-builder.Services.AddSingleton<IDiningHallRequester, DiningHallRequester>();
+builder.Services.AddScoped<IDiningHallServiceEvent, DiningHallService>();
+builder.Services.AddSingleton<IDiningHallSender, DiningHallSender>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -25,8 +25,13 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
-
 app.MapControllers();
+
+//create diningHallService to start the program
+using (var serviceScope = app.Services.CreateScope())
+{
+    var services = serviceScope.ServiceProvider;
+    var _ = services.GetRequiredService<IDiningHallServiceEvent>();
+}
 
 app.Run();
