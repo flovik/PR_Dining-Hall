@@ -8,6 +8,6 @@ Dining hall generates *orders* and gives these orders to the **Kitchen** which p
 [Kitchen](https://github.com/flovik/PR_Kitchen)
 
 ## Run app with Docker
-docker build -t dining-hall .
+docker-compose build
 
-docker run -p 8080:8080 dining-hall
+docker-compose up
