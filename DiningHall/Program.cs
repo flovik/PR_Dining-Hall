@@ -6,8 +6,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddScoped<IDiningHallServiceEvent, DiningHallService>();
+builder.Services.AddScoped<DiningHallService>();
 builder.Services.AddSingleton<IDiningHallSender, DiningHallSender>();
+builder.Services.AddSingleton<IDiningHallNotifier, DiningHallNotifier>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -31,7 +32,7 @@ app.MapControllers();
 using (var serviceScope = app.Services.CreateScope())
 {
     var services = serviceScope.ServiceProvider;
-    var _ = services.GetRequiredService<IDiningHallServiceEvent>();
+    var _ = services.GetRequiredService<DiningHallService>();
 }
 
 app.Run();

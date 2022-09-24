@@ -30,7 +30,6 @@ namespace DiningHall.Services
                 MaxWait = maxWait
             };
 
-            CurrentOrder = order;
             return order;
         }
 

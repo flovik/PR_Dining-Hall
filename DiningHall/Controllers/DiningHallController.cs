@@ -11,11 +11,11 @@ namespace DiningHall.Controllers
     public class DiningHallController : ControllerBase
     {
         private readonly ILogger<DiningHallController> _logger;
-        private readonly IDiningHallServiceEvent _diningHallService;
-        public DiningHallController(ILogger<DiningHallController> logger, IDiningHallServiceEvent diningHallService)
+        private readonly IDiningHallNotifier _diningHallNotifier;
+        public DiningHallController(ILogger<DiningHallController> logger, IDiningHallNotifier diningHallNotifier)
         {
             _logger = logger;
-            _diningHallService = diningHallService;
+            _diningHallNotifier = diningHallNotifier;
         }
 
         [HttpPost("distribution")]
@@ -24,7 +24,7 @@ namespace DiningHall.Controllers
             //endpoint for kitchen server, here comes returnOrder
 
             //notify waiters when returnOrder arrives
-            _diningHallService.OnReturnOrderProcess(returnOrder);
+            _diningHallNotifier.ProcessReturnOrder(returnOrder);
 
             return NoContent();
         }
