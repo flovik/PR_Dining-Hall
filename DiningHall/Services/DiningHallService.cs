@@ -16,12 +16,16 @@ namespace DiningHall.Services
         private readonly Random _rnd = new();
         private readonly IDiningHallSender _diningHallSender;
         private static Timer? _timer;
+        public int TimeUnit { get; }
 
         public DiningHallService(IConfiguration configuration, ILogger<DiningHallService> logger, IDiningHallSender diningHallSender, ILogger<Waiter> waiterLogger, IDiningHallNotifier diningHallNotifier)
         {
             _logger = logger;
             _waiterLogger = waiterLogger;
             _diningHallSender = diningHallSender;
+
+            //init time unit
+            TimeUnit = configuration.GetValue<int>("TIME_UNIT");
 
             var tablesNr = configuration.GetValue<int>("Tables");
             _tables = new BlockingCollection<Table>(tablesNr);
@@ -78,11 +82,16 @@ namespace DiningHall.Services
                 {
                     if (table.TableState == TableState.MakeOrder)
                     {
+                        //it takes time for waiter to pickup the order
+                        var pickUpTime = _rnd.Next(2, 5);
+                        Thread.Sleep(pickUpTime * TimeUnit);
+
                         //waiter takes order
                         var order = waiter.ServeTable(_diningHallSender, table, _waiterLogger);
 
                         //set a current order to table
                         table.CurrentOrder = order;
+                        break; //waiter serves only one table, so break the loop when served
                     }
                 }
 
@@ -93,7 +102,7 @@ namespace DiningHall.Services
         private void InitTimer()
         {
             //set timer for 2 seconds to change a table state as an event
-            _timer = new System.Timers.Timer(2000);
+            _timer = new System.Timers.Timer(3 * TimeUnit);
             _timer.Elapsed += ChangeTableState;
             _timer.AutoReset = true;
             _timer.Enabled = true;
