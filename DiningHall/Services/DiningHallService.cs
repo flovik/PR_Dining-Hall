@@ -17,11 +17,13 @@ namespace DiningHall.Services
         private readonly IDiningHallSender _diningHallSender;
         private static Timer? _timer;
         public int TimeUnit { get; }
+        private IRatingSystem _ratingSystem;
 
-        public DiningHallService(IConfiguration configuration, ILogger<DiningHallService> logger, IDiningHallSender diningHallSender, ILogger<Waiter> waiterLogger, IDiningHallNotifier diningHallNotifier)
+        public DiningHallService(IConfiguration configuration, ILogger<DiningHallService> logger, IDiningHallSender diningHallSender, ILogger<Waiter> waiterLogger, IDiningHallNotifier diningHallNotifier, IRatingSystem ratingSystem)
         {
             _logger = logger;
             _waiterLogger = waiterLogger;
+            _ratingSystem = ratingSystem;
             _diningHallSender = diningHallSender;
 
             //init time unit
@@ -102,7 +104,7 @@ namespace DiningHall.Services
         private void InitTimer()
         {
             //set timer for 2 seconds to change a table state as an event
-            _timer = new System.Timers.Timer(1.5 * TimeUnit);
+            _timer = new System.Timers.Timer(2 * TimeUnit);
             _timer.Elapsed += ChangeTableState;
             _timer.AutoReset = true;
             _timer.Enabled = true;
@@ -130,7 +132,13 @@ namespace DiningHall.Services
                 if (idsEqual && itemsEqual)
                 {
                     _logger.LogCritical($"Table {table.TableId} received the order!");
-                    _logger.LogCritical($"Food was prepared in {returnOrder.CookingTime} from expected {returnOrder.MaxWait}");
+                    
+                    //add new order in rating system
+                    _ratingSystem.AddNewOrder(returnOrder);
+                    
+                    //calculate the overall rating of restaurant
+                    _logger.LogCritical($"Overall rating: {_ratingSystem.CountRating()}");
+
                     table.CurrentOrder = null;
                     table.TableState = TableState.Free;
 

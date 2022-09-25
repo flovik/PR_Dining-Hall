@@ -9,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<DiningHallService>();
 builder.Services.AddSingleton<IDiningHallSender, DiningHallSender>();
 builder.Services.AddSingleton<IDiningHallNotifier, DiningHallNotifier>();
+builder.Services.AddSingleton<IRatingSystem, RatingSystem>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
