@@ -28,6 +28,8 @@ app.UseHttpsRedirection();
 
 app.MapControllers();
 
+Thread.Sleep(500);
+
 //create diningHallService to start the program
 using (var serviceScope = app.Services.CreateScope())
 {

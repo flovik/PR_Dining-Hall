@@ -102,7 +102,7 @@ namespace DiningHall.Services
         private void InitTimer()
         {
             //set timer for 2 seconds to change a table state as an event
-            _timer = new System.Timers.Timer(3 * TimeUnit);
+            _timer = new System.Timers.Timer(1.5 * TimeUnit);
             _timer.Elapsed += ChangeTableState;
             _timer.AutoReset = true;
             _timer.Enabled = true;
@@ -130,6 +130,7 @@ namespace DiningHall.Services
                 if (idsEqual && itemsEqual)
                 {
                     _logger.LogCritical($"Table {table.TableId} received the order!");
+                    _logger.LogCritical($"Food was prepared in {returnOrder.CookingTime} from expected {returnOrder.MaxWait}");
                     table.CurrentOrder = null;
                     table.TableState = TableState.Free;
 
