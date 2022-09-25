@@ -18,7 +18,7 @@ namespace DiningHall.Services
         public Order GenerateOrder(int waiterId)
         {
             var items = GenerateFoodList();
-            var maxWait = items.Select(item => Foods.foods[item].PreparationTime).Prepend(0).Max();
+            var maxWait = items.Select(item => Foods.foods[item].PreparationTime).Prepend(0).Max() * 1.3;
 
             var order = new Order
             {
@@ -27,10 +27,9 @@ namespace DiningHall.Services
                 WaiterId = waiterId,
                 Items = items,
                 Priority = GeneratePriority(),
-                MaxWait = maxWait
+                MaxWait = Convert.ToInt32(maxWait)
             };
 
-            CurrentOrder = order;
             return order;
         }
 
