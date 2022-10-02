@@ -8,29 +8,23 @@ namespace DiningHall.Services
 {
     public class DiningHallService
     {
-        private readonly BlockingCollection<Table> _tables;
+        private readonly List<Table> _tables;
         private readonly List<Waiter> _waiters = new();
         private readonly ILogger<DiningHallService> _logger;
-        private readonly ILogger<Waiter> _waiterLogger;
         private static readonly Mutex Mutex = new();
         private readonly Random _rnd = new();
-        private readonly IDiningHallSender _diningHallSender;
         private static Timer? _timer;
         public int TimeUnit { get; }
-        private IRatingSystem _ratingSystem;
 
         public DiningHallService(IConfiguration configuration, ILogger<DiningHallService> logger, IDiningHallSender diningHallSender, ILogger<Waiter> waiterLogger, IDiningHallNotifier diningHallNotifier, IRatingSystem ratingSystem)
         {
             _logger = logger;
-            _waiterLogger = waiterLogger;
-            _ratingSystem = ratingSystem;
-            _diningHallSender = diningHallSender;
 
             //init time unit
             TimeUnit = configuration.GetValue<int>("TIME_UNIT");
 
             var tablesNr = configuration.GetValue<int>("Tables");
-            _tables = new BlockingCollection<Table>(tablesNr);
+            _tables = new List<Table>(tablesNr);
 
             //create new tables with corresponding ID
             for (var i = 1; i <= tablesNr; i++)
@@ -45,59 +39,43 @@ namespace DiningHall.Services
 
             for (int i = 0; i < nrWaiters; i++)
             {
-                _waiters.Add(new Waiter(i + 1));
+                _waiters.Add(new Waiter(i + 1, waiterLogger, diningHallSender, TimeUnit, diningHallNotifier, ratingSystem));
             }
 
-            //subscribe waiters to event when an order is returned
-            diningHallNotifier.OnProcessReturnOrder += ProcessReturnOrder;
-
-            //here are created multiple threads, thread per waiter
-            foreach (var waiter in _waiters)
-            {
-                Task.Run(() => Start(waiter));
-            }
+            Start();
         }
 
         private void ChangeTableState(object? source, System.Timers.ElapsedEventArgs e)
         {
             //change table state, one table at a time
             var tableToChange = _rnd.Next(1, _tables.Count + 1);
-            Mutex.WaitOne();
             foreach (var table in _tables.Where(table => table.TableId == tableToChange
                                                          && table.TableState == TableState.Free))
             {
                 table.TableState = TableState.MakeOrder;
             }
-            Mutex.ReleaseMutex();
         }
 
-        public void Start(Waiter waiter)
+        public void Start()
         {
             //in thread function insert a mutex to not share resources
             //infinite loop of sending orders
 
             while (true)
             {
-                Mutex.WaitOne();
                 //search for tables that are ready to make orders
                 foreach (var table in _tables)
                 {
-                    if (table.TableState == TableState.MakeOrder)
+                    foreach (var waiter in _waiters)
                     {
-                        //it takes time for waiter to pickup the order
-                        var pickUpTime = _rnd.Next(2, 5);
-                        Thread.Sleep(pickUpTime * TimeUnit);
-
-                        //waiter takes order
-                        var order = waiter.ServeTable(_diningHallSender, table, _waiterLogger);
-
-                        //set a current order to table
-                        table.CurrentOrder = order;
-                        break; //waiter serves only one table, so break the loop when served
+                        if (table.TableState == TableState.MakeOrder && waiter.State == WaiterState.Free)
+                        {
+                            //change state of table to waiting
+                            table.TableState = TableState.WaitOrder;
+                            waiter.Serve(table);
+                        }
                     }
                 }
-
-                Mutex.ReleaseMutex();
             }
         }
 
@@ -108,48 +86,6 @@ namespace DiningHall.Services
             _timer.Elapsed += ChangeTableState;
             _timer.AutoReset = true;
             _timer.Enabled = true;
-        }
-
-        void ProcessReturnOrder(object? sender, ReturnOrder returnOrder)
-        {
-            //find the waiter from waiter list
-            var waiter = _waiters.First(w => w.WaiterId == returnOrder.WaiterId);
-
-            if (waiter.Orders.ContainsKey(returnOrder.OrderId) == false) return; //check his orderList
-
-            _logger.LogCritical($"Kitchen returned order with ID {returnOrder.OrderId} " +
-                                $"from table {returnOrder.TableId}");
-
-            Mutex.WaitOne();
-            foreach (var table in _tables.Where(t => t.CurrentOrder is not null &&
-                                                     t.CurrentOrder.OrderId == returnOrder.OrderId))
-            {
-                var idsEqual = table.CurrentOrder?.OrderId == returnOrder.OrderId;
-                var array1 = table.CurrentOrder?.Items?.OrderBy(a => a).ToList();
-                var array2 = returnOrder.Items?.OrderBy(a => a).ToList();
-                var itemsEqual = array1!.SequenceEqual(array2!);
-
-                if (idsEqual && itemsEqual)
-                {
-                    _logger.LogCritical($"Table {table.TableId} received the order!");
-                    
-                    //add new order in rating system
-                    _ratingSystem.AddNewOrder(returnOrder);
-                    
-                    //calculate the overall rating of restaurant
-                    _logger.LogCritical($"Overall rating: {_ratingSystem.CountRating()}");
-
-                    table.CurrentOrder = null;
-                    table.TableState = TableState.Free;
-
-                    waiter.Orders.Remove(returnOrder.OrderId);
-                    break;
-                }
-
-                _logger.LogWarning($"Kitchen sent an invalid order!");
-
-            }
-            Mutex.ReleaseMutex();
         }
     }
 }
