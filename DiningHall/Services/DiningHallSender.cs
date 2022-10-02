@@ -18,9 +18,8 @@ namespace DiningHall.Services
 
         public void SendOrder(Order order)
         {
-            _logger.LogCritical("debug");
-            var request = new RestRequest("api/order").AddJsonBody(order);
-            _client.Post(request);
+            var request = new RestRequest("api/order").AddJsonBody(order); 
+            _client.PostAsync(request);
         }
     }
 }

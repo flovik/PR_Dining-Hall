@@ -34,7 +34,7 @@ namespace DiningHall.Services
             var pickUpTime = _rnd.Next(2, 5);
             State = WaiterState.Busy;
             Thread.Sleep(pickUpTime * TimeUnit);
-            Thread = new Thread(() => ServeTable(table));
+            Thread = new Thread(new ThreadStart(() => ServeTable(table)));
             Thread.Start();
         }
 
@@ -90,8 +90,7 @@ namespace DiningHall.Services
                 Orders.Remove(returnOrder.OrderId);
                 TablesServed.Remove(returnOrder.TableId);
             }
-
-            _logger.LogWarning($"Kitchen sent an invalid order!");
+            else _logger.LogWarning($"Kitchen sent an invalid order!");
 
         }
 

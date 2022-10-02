@@ -42,7 +42,7 @@ namespace DiningHall.Services
                 _waiters.Add(new Waiter(i + 1, waiterLogger, diningHallSender, TimeUnit, diningHallNotifier, ratingSystem));
             }
 
-            Start();
+            Task.Run(Start);
         }
 
         private void ChangeTableState(object? source, System.Timers.ElapsedEventArgs e)
