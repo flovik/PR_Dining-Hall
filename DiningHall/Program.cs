@@ -26,16 +26,15 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.MapControllers();
 
 Thread.Sleep(500);
 
-//create diningHallService to start the program
-using (var serviceScope = app.Services.CreateScope())
+Task.Run(() =>
 {
+    using var serviceScope = app.Services.CreateScope();
     var services = serviceScope.ServiceProvider;
     var _ = services.GetRequiredService<DiningHallService>();
-}
+});
 
 app.Run();
