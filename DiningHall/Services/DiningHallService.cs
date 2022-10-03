@@ -82,7 +82,7 @@ namespace DiningHall.Services
         private void InitTimer()
         {
             //set timer for 2 seconds to change a table state as an event
-            _timer = new System.Timers.Timer(2 * TimeUnit);
+            _timer = new System.Timers.Timer(1 * TimeUnit);
             _timer.Elapsed += ChangeTableState;
             _timer.AutoReset = true;
             _timer.Enabled = true;
