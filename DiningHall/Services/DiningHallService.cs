@@ -58,24 +58,9 @@ namespace DiningHall.Services
 
         public void Start()
         {
-            //in thread function insert a mutex to not share resources
-            //infinite loop of sending orders
-
-            while (true)
+            foreach (var waiter in _waiters)
             {
-                //search for tables that are ready to make orders
-                foreach (var table in _tables)
-                {
-                    foreach (var waiter in _waiters)
-                    {
-                        if (table.TableState == TableState.MakeOrder && waiter.State == WaiterState.Free)
-                        {
-                            //change state of table to waiting
-                            table.TableState = TableState.WaitOrder;
-                            waiter.Serve(table);
-                        }
-                    }
-                }
+                Task.Run(() => waiter.Start(_tables));
             }
         }
 
