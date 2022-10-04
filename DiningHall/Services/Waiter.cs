@@ -15,6 +15,7 @@ namespace DiningHall.Services
         private readonly IDiningHallSender _sender;
         public int TimeUnit { get; }
         private readonly IRatingSystem _ratingSystem;
+        private static readonly Mutex Mutex = new();
 
         public Waiter(int waiterId, ILogger<Waiter> logger, IDiningHallSender sender, int timeUnit, IDiningHallNotifier diningHallNotifier, IRatingSystem ratingSystem)
         {
@@ -28,13 +29,31 @@ namespace DiningHall.Services
             diningHallNotifier.OnProcessReturnOrder += ProcessReturnOrder;
         }
 
+        public void Start(List<Table> tableList)
+        {
+            while (true)
+            {
+                Mutex.WaitOne();
+                foreach (var table in tableList)
+                {
+                    if (table.TableState == TableState.MakeOrder && State == WaiterState.Free)
+                    {
+                        //change state of table to waiting
+                        table.TableState = TableState.WaitOrder;
+                        Serve(table);
+                    }
+                }
+                Mutex.ReleaseMutex();
+            }
+        }
+
         public void Serve(Table table)
         {
             //it takes time for waiter to pickup the order
             var pickUpTime = _rnd.Next(2, 5);
             State = WaiterState.Busy;
             Thread.Sleep(pickUpTime * TimeUnit);
-            Thread = new Thread(new ThreadStart(() => ServeTable(table)));
+            Thread = new Thread(() => ServeTable(table));
             Thread.Start();
         }
 
